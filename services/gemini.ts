@@ -1,24 +1,28 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 
-// Safely access process.env for browser environments
-const getApiKey = () => {
-  if (typeof process !== 'undefined' && process.env && process.env.API_KEY) {
-    return process.env.API_KEY;
+// Helper to get the best available API key dynamically
+const getGenAI = () => {
+  let key = '';
+  
+  // 1. Check Local Storage (User Custom Key)
+  if (typeof window !== 'undefined') {
+    key = localStorage.getItem('maxi_custom_api_key') || '';
   }
-  // Fallback or empty string to prevent crash, though API calls will fail without a key
-  return '';
-};
 
-const apiKey = getApiKey();
-const ai = new GoogleGenAI({ apiKey });
+  // 2. Fallback to Environment Variable (safe check for browser)
+  if (!key && typeof process !== 'undefined' && process.env && process.env.API_KEY) {
+    key = process.env.API_KEY;
+  }
 
-// Helper to check for API key
-const checkApiKey = () => {
-  if (!apiKey) throw new Error("API Key is missing. Please set the API_KEY environment variable.");
+  if (!key) {
+    throw new Error("API Key is missing. Please add your API Key in the Profile settings.");
+  }
+
+  return new GoogleGenAI({ apiKey: key });
 };
 
 export const generateTutorResponse = async (history: { role: string; parts: { text: string }[] }[], message: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const chat = ai.chats.create({
     model: 'gemini-2.5-flash',
     history: history,
@@ -47,7 +51,7 @@ export const generateTutorResponse = async (history: { role: string; parts: { te
 };
 
 export const humanizeText = async (text: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Rewrite the following text to sound more natural, human-like, and less robotic. Use varied sentence structure. Output ONLY the rewritten text. Text: ${text}`,
@@ -56,7 +60,7 @@ export const humanizeText = async (text: string) => {
 };
 
 export const generateNotes = async (rawText: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Convert the following raw notes into a **Beautifully Structured Study Guide** with **Headings 📝**, bullet points, and key takeaways. Use emojis. Markdown format. Notes: ${rawText}`,
@@ -65,7 +69,7 @@ export const generateNotes = async (rawText: string) => {
 };
 
 export const polishWriting = async (text: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Act as a professional editor. Fix grammar and style. Text: ${text}`,
@@ -74,7 +78,7 @@ export const polishWriting = async (text: string) => {
 };
 
 export const detectAI = async (text: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Analyze the following text for patterns found in AI content. 
@@ -88,7 +92,7 @@ export const detectAI = async (text: string) => {
 };
 
 export const processLecture = async (text: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Summarize this lecture transcript. Identify **Key Topics 🗝️** and **Action Items ✅**. Markdown format with emojis. Transcript: ${text}`,
@@ -97,7 +101,7 @@ export const processLecture = async (text: string) => {
 };
 
 export const researchTopic = async (query: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Research the following topic comprehensively. Cite sources. Use bold headers and emojis. Topic: ${query}`,
@@ -115,7 +119,7 @@ export const researchTopic = async (query: string) => {
 };
 
 export const summarizeContent = async (text: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Condense the following text into key bullet points with emojis. Text: ${text}`,
@@ -124,7 +128,7 @@ export const summarizeContent = async (text: string) => {
 };
 
 export const generateQuiz = async (content: string) => {
-  checkApiKey();
+  const ai = getGenAI();
   const response = await ai.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: `Create a set of 5-10 Flashcards/Quiz questions based on the provided text.

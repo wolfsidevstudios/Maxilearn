@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { UserState } from '../types';
 import { 
@@ -25,6 +24,8 @@ interface AppContextType {
   updateAvatars: (userUrl: string, aiUrl: string) => void;
   completeOnboarding: (name: string, level: string, goal: string, userAvatar: string, aiAvatar: string) => void;
   xpNotification: { show: boolean; amount: number } | null;
+  saveApiKey: (key: string) => void;
+  hasCustomApiKey: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -47,6 +48,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // App specific state (XP, Credits)
   const [userState, setUserState] = useState<UserState>(INITIAL_USER_STATE);
   const [xpNotification, setXpNotification] = useState<{ show: boolean; amount: number } | null>(null);
+  const [hasCustomApiKey, setHasCustomApiKey] = useState(false);
 
   // 1. Listen for Firebase Auth Changes
   useEffect(() => {
@@ -85,6 +87,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return unsubscribe;
+  }, []);
+
+  // Check for API key on mount
+  useEffect(() => {
+      const key = localStorage.getItem('maxi_custom_api_key');
+      setHasCustomApiKey(!!key);
   }, []);
 
   // 2. Persist State Changes
@@ -147,7 +155,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const useCredit = (): boolean => {
-    if (userState.isPro) {
+    // If using custom key, we don't deduct credits, or we treat them as Pro
+    if (hasCustomApiKey || userState.isPro) {
       addXp(10);
       return true;
     }
@@ -179,6 +188,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }));
   };
 
+  const saveApiKey = (key: string) => {
+    if (key.trim()) {
+        localStorage.setItem('maxi_custom_api_key', key.trim());
+        setHasCustomApiKey(true);
+    } else {
+        localStorage.removeItem('maxi_custom_api_key');
+        setHasCustomApiKey(false);
+    }
+  };
+
   return (
     <AppContext.Provider value={{ 
       userState, 
@@ -193,7 +212,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       logout,
       xpNotification,
       updateAvatars,
-      completeOnboarding
+      completeOnboarding,
+      saveApiKey,
+      hasCustomApiKey
     }}>
       {children}
     </AppContext.Provider>
