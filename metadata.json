@@ -1,0 +1,7 @@
+{
+  "name": "Maxi Learn",
+  "description": "An all-in-one AI study platform offering tutoring, writing assistance, research tools, and more.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
